@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bhavesh Kumar — AI Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,300;0,400;0,700;1,300&family=Chakra+Petch:ital,wght@0,300;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg:#03050f;
+  --bg2:#070d1a;
+  --panel:#0b1120;
+  --blue:#00aaff;
+  --blue-dim:#003a66;
+  --green:#00ff88;
+  --green-dim:#003322;
+  --white:#e8eef8;
+  --muted:#3a4a66;
+  --dim:#1e2a40;
+  --red:#ff3366;
+}
+
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'JetBrains Mono',monospace;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* CURSOR - crosshair AI style */
+.cur{
+  position:fixed;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+}
+.cur::before,.cur::after{
+  content:'';position:absolute;background:var(--blue);
+}
+.cur::before{width:14px;height:1px;top:50%;left:50%;transform:translate(-50%,-50%);}
+.cur::after{width:1px;height:14px;top:50%;left:50%;transform:translate(-50%,-50%);}
+.cur-center{
+  width:4px;height:4px;
+  background:var(--green);
+  border-radius:50%;
+  position:fixed;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 8px var(--green);
+}
+
+/* BG CANVAS */
+canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.5;}
+
+/* BOOT OVERLAY */
+#boot{
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:9000;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:1rem;
+  transition:opacity 0.5s ease;
+}
+.boot-line{
+  font-size:0.75rem;
+  letter-spacing:0.1em;
+  color:var(--green);
+  opacity:0;
+  animation:bootLine 0.3s ease forwards;
+}
+.boot-bar-wrap{
+  width:300px;height:2px;
+  background:var(--dim);
+  margin-top:1.5rem;
+  overflow:hidden;
+}
+.boot-bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  width:0;
+  animation:bootBar 1.5s 1s ease forwards;
+}
+@keyframes bootLine{to{opacity:1;}}
+@keyframes bootBar{to{width:100%;}}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 3rem;
+  background:rgba(3,5,15,0.85);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(0,170,255,0.1);
+}
+.nav-logo{display:flex;align-items:center;gap:1rem;}
+.nl-icon{
+  width:32px;height:32px;
+  border:1px solid var(--blue);
+  display:grid;place-items:center;
+  position:relative;
+}
+.nl-icon::before{
+  content:'AI';
+  font-size:0.55rem;font-weight:700;
+  color:var(--blue);letter-spacing:0.05em;
+}
+.nl-icon::after{
+  content:'';
+  position:absolute;inset:-4px;
+  border:1px solid rgba(0,170,255,0.2);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(1.1);}}
+.nl-name{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:0.95rem;font-weight:700;
+  letter-spacing:0.15em;
+  color:var(--white);
+}
+.nl-tag{
+  font-size:0.55rem;color:var(--blue);
+  letter-spacing:0.2em;opacity:0.7;
+}
+.nav-links{display:flex;gap:2rem;}
+.nav-links a{
+  font-size:0.65rem;letter-spacing:0.15em;
+  color:var(--muted);text-decoration:none;
+  transition:color 0.3s;
+  position:relative;
+}
+.nav-links a::before{content:'./';color:var(--green);opacity:0.5;}
+.nav-links a:hover{color:var(--blue);}
+.nav-status{
+  display:flex;align-items:center;gap:0.6rem;
+  font-size:0.6rem;letter-spacing:0.2em;
+  color:var(--green);
+}
+.status-dot{
+  width:6px;height:6px;
+  border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:blink 1.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* HERO */
+#hero{
+  min-height:100vh;
+  padding:8rem 3rem 4rem;
+  display:flex;flex-direction:column;
+  justify-content:center;
+  position:relative;z-index:1;
+}
+.hero-path{
+  font-size:0.65rem;letter-spacing:0.15em;
+  color:var(--muted);
+  margin-bottom:2rem;
+  opacity:0;animation:fadeIn 0.5s 2.5s forwards;
+}
+.hero-path span{color:var(--blue);}
+
+.hero-terminal{
+  background:var(--panel);
+  border:1px solid rgba(0,170,255,0.15);
+  border-radius:6px;
+  padding:2rem;
+  max-width:750px;
+  margin-bottom:3rem;
+  position:relative;
+  opacity:0;animation:fadeIn 0.5s 2.7s forwards;
+}
+.ht-bar{
+  display:flex;align-items:center;gap:0.5rem;
+  margin-bottom:1.5rem;
+  padding-bottom:1rem;
+  border-bottom:1px solid rgba(0,170,255,0.1);
+}
+.ht-dot{width:10px;height:10px;border-radius:50%;}
+.ht-dot:nth-child(1){background:#ff5f57;}
+.ht-dot:nth-child(2){background:#febc2e;}
+.ht-dot:nth-child(3){background:#28c840;}
+.ht-title{
+  margin-left:auto;
+  font-size:0.6rem;letter-spacing:0.2em;
+  color:var(--muted);
+}
+.ht-line{
+  font-size:0.85rem;line-height:2;
+  color:rgba(232,238,248,0.6);
+}
+.ht-line .prompt{color:var(--green);}
+.ht-line .cmd{color:var(--blue);}
+.ht-line .out{color:rgba(232,238,248,0.4);font-style:italic;}
+.ht-line .highlight{color:var(--white);font-weight:700;}
+.ht-cursor{
+  display:inline-block;
+  width:8px;height:16px;
+  background:var(--green);
+  vertical-align:middle;
+  animation:blink 1s step-end infinite;
+}
+
+.hero-name{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:clamp(3rem,10vw,10rem);
+  font-weight:700;
+  line-height:0.92;
+  letter-spacing:-0.02em;
+  opacity:0;animation:fadeIn 0.6s 3.2s forwards;
+}
+.hero-name .n1{color:var(--white);}
+.hero-name .n2{
+  color:transparent;
+  -webkit-text-stroke:1.5px var(--blue);
+  text-shadow:0 0 40px rgba(0,170,255,0.3);
+}
+
+.hero-roles{
+  display:flex;gap:1.5rem;flex-wrap:wrap;
+  margin-top:2rem;
+  opacity:0;animation:fadeIn 0.6s 3.5s forwards;
+}
+.role-badge{
+  display:flex;align-items:center;gap:0.6rem;
+  font-size:0.65rem;letter-spacing:0.15em;
+  padding:0.5rem 1rem;
+  border:1px solid rgba(0,170,255,0.2);
+  background:rgba(0,170,255,0.04);
+  color:var(--blue);
+}
+.role-badge .rb-num{color:var(--green);opacity:0.7;}
+
+.hero-cta-row{
+  display:flex;gap:1.5rem;align-items:center;
+  margin-top:3rem;
+  opacity:0;animation:fadeIn 0.6s 3.8s forwards;
+}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:0.8rem;
+  background:var(--blue);
+  color:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.65rem;font-weight:700;
+  letter-spacing:0.2em;text-transform:uppercase;
+  padding:0.9rem 1.8rem;text-decoration:none;
+  transition:box-shadow 0.3s,transform 0.3s;
+}
+.btn-primary:hover{box-shadow:0 0 30px rgba(0,170,255,0.4);transform:translateY(-2px);}
+.btn-secondary{
+  font-size:0.65rem;letter-spacing:0.15em;
+  color:var(--muted);text-decoration:none;
+  transition:color 0.3s;
+}
+.btn-secondary:hover{color:var(--green);}
+
+/* TICKER */
+.ticker-wrap{
+  position:relative;z-index:1;
+  border-top:1px solid rgba(0,170,255,0.08);
+  border-bottom:1px solid rgba(0,170,255,0.08);
+  padding:1rem 0;overflow:hidden;
+  background:rgba(0,170,255,0.02);
+}
+.ticker-track{
+  display:flex;gap:3rem;white-space:nowrap;
+  animation:ticker 25s linear infinite;
+}
+@keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.ti{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(0,170,255,0.2);flex-shrink:0;}
+.ti.g{color:rgba(0,255,136,0.2);}
+.ti-sep{color:rgba(0,170,255,0.1);flex-shrink:0;}
+
+/* SECTIONS */
+section{padding:7rem 3rem;position:relative;z-index:1;}
+.sec-header{margin-bottom:4rem;}
+.sec-cmd{
+  font-size:0.65rem;letter-spacing:0.15em;color:var(--green);
+  margin-bottom:0.8rem;
+}
+.sec-cmd::before{content:'> ';opacity:0.5;}
+.sec-title{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:clamp(2.5rem,7vw,6rem);
+  font-weight:700;line-height:1;
+  letter-spacing:-0.01em;
+}
+.sec-title span{color:var(--blue);}
+
+/* DIVIDER */
+.sys-divider{
+  height:1px;margin:0 3rem;
+  background:linear-gradient(90deg,transparent,rgba(0,170,255,0.2),rgba(0,255,136,0.1),transparent);
+}
+
+/* ABOUT */
+#about{border-top:1px solid rgba(0,170,255,0.07);}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;}
+.about-text p{
+  font-size:0.9rem;line-height:2.1;
+  color:rgba(232,238,248,0.5);font-weight:300;
+  margin-bottom:1rem;
+}
+.about-text p strong{color:var(--white);font-weight:400;}
+
+.sys-card{
+  background:var(--panel);
+  border:1px solid rgba(0,170,255,0.12);
+  border-radius:4px;
+  overflow:hidden;
+}
+.sc-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 1.5rem;
+  border-bottom:1px solid rgba(0,170,255,0.1);
+  background:rgba(0,170,255,0.03);
+}
+.sc-title{font-size:0.6rem;letter-spacing:0.2em;color:var(--blue);}
+.sc-badge{
+  font-size:0.5rem;letter-spacing:0.15em;
+  background:rgba(0,255,136,0.1);
+  color:var(--green);
+  padding:0.2rem 0.6rem;
+  border:1px solid rgba(0,255,136,0.2);
+}
+.sc-body{padding:1.5rem;}
+.sc-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.6rem 0;
+  border-bottom:1px solid rgba(0,170,255,0.05);
+  font-size:0.75rem;
+}
+.sc-row:last-child{border-bottom:none;}
+.sc-key{color:var(--muted);}
+.sc-val{color:var(--white);}
+.sc-val.green{color:var(--green);}
+.sc-val.blue{color:var(--blue);}
+
+/* SKILLS */
+#skills{border-top:1px solid rgba(0,170,255,0.07);}
+.skills-matrix{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:rgba(0,170,255,0.06);
+  border:1px solid rgba(0,170,255,0.1);
+  border-radius:4px;overflow:hidden;
+  margin-top:3rem;
+}
+.sk-cell{
+  background:var(--bg2);
+  padding:2rem 1.5rem;
+  transition:background 0.3s;
+  position:relative;overflow:hidden;
+}
+.sk-cell::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+  transform:scaleX(0);
+  transition:transform 0.4s;
+}
+.sk-cell:hover{background:rgba(0,170,255,0.05);}
+.sk-cell:hover::after{transform:scaleX(1);}
+.sk-icon{
+  font-size:1.6rem;margin-bottom:1rem;
+  filter:grayscale(0.5);
+  transition:filter 0.3s;
+}
+.sk-cell:hover .sk-icon{filter:none;}
+.sk-name{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:0.8rem;font-weight:600;
+  letter-spacing:0.05em;color:var(--white);
+  margin-bottom:0.4rem;
+}
+.sk-level{
+  font-size:0.6rem;letter-spacing:0.15em;
+  color:var(--green);
+}
+
+/* AGENTS */
+#agents{border-top:1px solid rgba(0,170,255,0.07);}
+.agents-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:2rem;margin-top:3rem;
+}
+.agent-card{
+  background:var(--panel);
+  border:1px solid rgba(0,170,255,0.15);
+  border-radius:6px;
+  overflow:hidden;
+  position:relative;
+  transition:border-color 0.4s,box-shadow 0.4s;
+}
+.agent-card:hover{
+  border-color:rgba(0,170,255,0.4);
+  box-shadow:0 0 40px rgba(0,170,255,0.08),inset 0 0 40px rgba(0,170,255,0.03);
+}
+.agent-card:nth-child(2){border-color:rgba(0,255,136,0.15);}
+.agent-card:nth-child(2):hover{border-color:rgba(0,255,136,0.4);box-shadow:0 0 40px rgba(0,255,136,0.08),inset 0 0 40px rgba(0,255,136,0.03);}
+
+.ac-top{
+  padding:2rem;
+  border-bottom:1px solid rgba(0,170,255,0.08);
+  display:flex;justify-content:space-between;align-items:start;
+}
+.ac-id{
+  font-size:0.55rem;letter-spacing:0.3em;
+  color:var(--blue);margin-bottom:0.5rem;
+}
+.agent-card:nth-child(2) .ac-id{color:var(--green);}
+.ac-name{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:1.8rem;font-weight:700;
+  line-height:1;letter-spacing:-0.01em;
+}
+.ac-status-badge{
+  display:flex;align-items:center;gap:0.4rem;
+  font-size:0.55rem;letter-spacing:0.15em;
+  background:rgba(0,255,136,0.08);
+  border:1px solid rgba(0,255,136,0.2);
+  color:var(--green);
+  padding:0.3rem 0.7rem;
+  white-space:nowrap;
+}
+.ac-status-badge::before{content:'●';font-size:0.4rem;animation:blink 1s ease-in-out infinite;}
+
+.ac-mid{padding:2rem;border-bottom:1px solid rgba(0,170,255,0.08);}
+.ac-desc{font-size:0.82rem;line-height:2;color:rgba(232,238,248,0.5);font-weight:300;}
+
+.ac-output{
+  padding:1.5rem 2rem;
+  background:rgba(0,0,0,0.2);
+}
+.ao-label{font-size:0.55rem;letter-spacing:0.25em;color:var(--muted);margin-bottom:0.6rem;}
+.ao-text{
+  font-size:0.75rem;line-height:1.8;
+  color:rgba(0,255,136,0.7);
+  font-style:italic;
+}
+
+.ac-footer{
+  padding:1.5rem 2rem;
+  display:flex;flex-wrap:wrap;gap:0.5rem;
+}
+.ac-tech{
+  font-size:0.55rem;letter-spacing:0.12em;
+  background:rgba(0,170,255,0.07);
+  border:1px solid rgba(0,170,255,0.15);
+  color:rgba(0,170,255,0.7);
+  padding:0.25rem 0.7rem;
+}
+.agent-card:nth-child(2) .ac-tech{
+  background:rgba(0,255,136,0.05);
+  border-color:rgba(0,255,136,0.1);
+  color:rgba(0,255,136,0.6);
+}
+
+/* TOOLS */
+#tools{border-top:1px solid rgba(0,170,255,0.07);background:var(--bg2);}
+.tools-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:1.5rem;margin-top:3rem;
+}
+.tool-card{
+  border:1px solid rgba(0,170,255,0.08);
+  padding:1.5rem;
+  background:var(--panel);
+  border-radius:4px;
+  text-align:center;
+  transition:border-color 0.3s,transform 0.3s,background 0.3s;
+  position:relative;overflow:hidden;
+}
+.tool-card::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(0,170,255,0.06),transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.tool-card:hover{
+  border-color:rgba(0,170,255,0.25);
+  transform:translateY(-3px);
+  background:rgba(0,170,255,0.04);
+}
+.tool-card:hover::before{opacity:1;}
+.tc-emoji{font-size:1.8rem;margin-bottom:0.8rem;}
+.tc-name{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:0.7rem;font-weight:600;
+  letter-spacing:0.08em;color:var(--white);
+  margin-bottom:0.3rem;
+}
+.tc-cat{font-size:0.55rem;letter-spacing:0.15em;color:var(--muted);}
+
+/* TIMELINE */
+#journey{border-top:1px solid rgba(0,170,255,0.07);}
+.tl{margin-top:3rem;position:relative;}
+.tl::before{
+  content:'';
+  position:absolute;left:20px;top:0;bottom:0;
+  width:1px;
+  background:linear-gradient(var(--blue),var(--green),transparent);
+  opacity:0.2;
+}
+.tl-item{
+  display:grid;grid-template-columns:60px 1fr;
+  gap:2rem;
+  padding:2rem 0;
+  border-bottom:1px solid rgba(0,170,255,0.06);
+  position:relative;
+}
+.tl-dot{
+  width:10px;height:10px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 12px var(--blue);
+  margin-top:6px;
+  position:relative;z-index:1;
+  margin-left:15px;
+}
+.tl-item:nth-child(2) .tl-dot{background:var(--green);box-shadow:0 0 12px var(--green);}
+.tl-body{}
+.tl-phase{font-size:0.55rem;letter-spacing:0.25em;color:var(--green);margin-bottom:0.5rem;}
+.tl-title{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:1.2rem;font-weight:600;
+  color:var(--white);margin-bottom:0.5rem;
+}
+.tl-desc{font-size:0.82rem;color:rgba(232,238,248,0.45);line-height:1.9;font-weight:300;}
+
+/* FOOTER */
+footer{
+  border-top:1px solid rgba(0,170,255,0.12);
+  padding:4rem 3rem;
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;
+}
+.ft-left{
+  font-family:'Chakra Petch',sans-serif;
+  font-size:1.5rem;font-weight:700;
+  color:var(--blue);letter-spacing:0.1em;
+}
+.ft-center{
+  font-size:0.6rem;letter-spacing:0.2em;
+  color:var(--muted);text-align:center;
+}
+.ft-right{text-align:right;}
+.ft-cta{
+  display:inline-flex;align-items:center;gap:0.8rem;
+  border:1px solid var(--blue);
+  color:var(--blue);
+  font-size:0.6rem;font-weight:700;
+  letter-spacing:0.2em;text-transform:uppercase;
+  padding:0.8rem 1.5rem;
+  text-decoration:none;
+  transition:background 0.3s,color 0.3s,box-shadow 0.3s;
+}
+.ft-cta:hover{background:var(--blue);color:var(--bg);box-shadow:0 0 20px rgba(0,170,255,0.3);}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1),transform 0.8s cubic-bezier(0.16,1,0.3,1);}
+.reveal.in{opacity:1;transform:translateY(0);}
+.rd1{transition-delay:0.1s;}.rd2{transition-delay:0.2s;}.rd3{transition-delay:0.35s;}
+
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+@media(max-width:900px){
+  nav{padding:1rem 1.5rem;}
+  section{padding:4rem 1.5rem;}
+  .about-grid{grid-template-columns:1fr;}
+  .agents-grid{grid-template-columns:1fr;}
+  .skills-matrix{grid-template-columns:repeat(2,1fr);}
+  .tools-grid{grid-template-columns:repeat(3,1fr);}
+  footer{grid-template-columns:1fr;text-align:center;gap:1.5rem;}
+  .ft-right{text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot">
+  <div class="boot-line" style="animation-delay:0.1s">[ SYSTEM BOOT ] — Bhavesh_Kumar.AI v2.0</div>
+  <div class="boot-line" style="animation-delay:0.5s;color:rgba(0,170,255,0.7)">Loading modules: prompt_engineering.py ... OK</div>
+  <div class="boot-line" style="animation-delay:0.9s;color:rgba(0,170,255,0.7)">Loading modules: ai_agents.core ... OK</div>
+  <div class="boot-line" style="animation-delay:1.3s;color:rgba(0,170,255,0.7)">Loading modules: tool_explorer.js ... OK</div>
+  <div class="boot-line" style="animation-delay:1.7s">All systems operational. Initializing portfolio...</div>
+  <div class="boot-bar-wrap"><div class="boot-bar"></div></div>
+</div>
+
+<div class="cur" id="cur"></div>
+<div class="cur-center" id="curC"></div>
+<canvas id="cvs"></canvas>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-path">~/portfolio/<span>bhavesh_kumar</span> $ whoami --verbose</div>
+
+  <div class="hero-terminal">
+    <div class="ht-bar">
+      <div class="ht-dot"></div><div class="ht-dot"></div><div class="ht-dot"></div>
+      <div class="ht-title">terminal — zsh — 80×24</div>
+    </div>
+    <div class="ht-line"><span class="prompt">bhavesh@ai:~$</span> <span class="cmd">query --name identity</span></div>
+    <div class="ht-line"><span class="out">→ </span><span class="highlight">AI Engineer</span> <span class="out">// Prompt Engineer // Agent Builder</span></div>
+    <div class="ht-line"><span class="prompt">bhavesh@ai:~$</span> <span class="cmd">list --agents --deployed</span></div>
+    <div class="ht-line"><span class="out">→ </span><span class="highlight">2 agents deployed</span> <span class="out">// running autonomously</span></div>
+    <div class="ht-line"><span class="prompt">bhavesh@ai:~$</span> <span class="cmd">status --curiosity</span></div>
+    <div class="ht-line"><span class="out">→ </span><span class="highlight" style="color:var(--green)">MAXIMUM</span> <span class="out">// always exploring new AI tools</span> <span class="ht-cursor"></span></div>
+  </div>
+
+  <h1 class="hero-name">
+    <span class="n1">BHAVESH</span><br>
+    <span class="n2">KUMAR</span>
+  </h1>
+
+  <div class="hero-roles">
+    <div class="role-badge"><span class="rb-num">[01]</span> Prompt Engineer</div>
+    <div class="role-badge"><span class="rb-num">[02]</span> AI Agent Builder</div>
+    <div class="role-badge"><span class="rb-num">[03]</span> Tool Explorer</div>
+  </div>
+
+  <div class="hero-cta-row">
+    <a href="#agents" class="btn-primary">⟩ View AI Agents</a>
+    <a href="#skills" class="btn-secondary">// explore skills →</a>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ti">PROMPT ENGINEERING</span><span class="ti-sep">◈</span>
+    <span class="ti g">AI AGENTS</span><span class="ti-sep">◈</span>
+    <span class="ti">MACHINE LEARNING</span><span class="ti-sep">◈</span>
+    <span class="ti g">LANGCHAIN</span><span class="ti-sep">◈</span>
+    <span class="ti">OPENAI API</span><span class="ti-sep">◈</span>
+    <span class="ti g">AUTOMATION</span><span class="ti-sep">◈</span>
+    <span class="ti">RAG SYSTEMS</span><span class="ti-sep">◈</span>
+    <span class="ti g">AI TOOLS</span><span class="ti-sep">◈</span>
+    <span class="ti">FINE-TUNING</span><span class="ti-sep">◈</span>
+    <!-- dup -->
+    <span class="ti">PROMPT ENGINEERING</span><span class="ti-sep">◈</span>
+    <span class="ti g">AI AGENTS</span><span class="ti-sep">◈</span>
+    <span class="ti">MACHINE LEARNING</span><span class="ti-sep">◈</span>
+    <span class="ti g">LANGCHAIN</span><span class="ti-sep">◈</span>
+    <span class="ti">OPENAI API</span><span class="ti-sep">◈</span>
+    <span class="ti g">AUTOMATION</span><span class="ti-sep">◈</span>
+    <span class="ti">RAG SYSTEMS</span><span class="ti-sep">◈</span>
+    <span class="ti g">AI TOOLS</span><span class="ti-sep">◈</span>
+    <span class="ti">FINE-TUNING</span><span class="ti-sep">◈</span>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="sec-header">
+    <div class="sec-cmd reveal">run profile.sh --full</div>
+    <h2 class="sec-title reveal rd1">System <span>Profile.</span></h2>
+  </div>
+  <div class="about-grid">
+    <div class="about-text reveal rd1">
+      <p>I'm Bhavesh — an AI engineer who got obsessed with the technology that's reshaping everything. I started with <strong>prompt engineering</strong> — learning how to talk to AI models in ways that get results most people can't get. Then I went deeper.</p>
+      <p>I studied how <strong>AI/ML systems actually work</strong> — not just using tools, but understanding the mechanics behind them. That foundation let me build my first AI agents: autonomous systems that actually <em>do</em> things, not just answer questions.</p>
+      <p>What drives me is curiosity. Every week there are new models, new tools, new capabilities. <strong>I explore them all.</strong> This isn't just a career direction — it's how I think.</p>
+    </div>
+    <div class="reveal rd2">
+      <div class="sys-card">
+        <div class="sc-header">
+          <div class="sc-title">SYSTEM_PROFILE.json</div>
+          <div class="sc-badge">ACTIVE</div>
+        </div>
+        <div class="sc-body">
+          <div class="sc-row"><span class="sc-key">name</span><span class="sc-val">"Bhavesh Kumar"</span></div>
+          <div class="sc-row"><span class="sc-key">role</span><span class="sc-val blue">"AI Engineer"</span></div>
+          <div class="sc-row"><span class="sc-key">level</span><span class="sc-val">"Class 10 → Building"</span></div>
+          <div class="sc-row"><span class="sc-key">agents_deployed</span><span class="sc-val green">2</span></div>
+          <div class="sc-row"><span class="sc-key">tools_explored</span><span class="sc-val green">"50+"</span></div>
+          <div class="sc-row"><span class="sc-key">curiosity_level</span><span class="sc-val green">MAX</span></div>
+          <div class="sc-row"><span class="sc-key">status</span><span class="sc-val green">"always learning"</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sys-divider"></div>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="sec-header">
+    <div class="sec-cmd reveal">ls ./capabilities --grid</div>
+    <h2 class="sec-title reveal rd1">AI <span>Stack.</span></h2>
+  </div>
+  <div class="skills-matrix">
+    <div class="sk-cell reveal">
+      <div class="sk-icon">🧠</div>
+      <div class="sk-name">Prompt Engineering</div>
+      <div class="sk-level">CORE SKILL</div>
+    </div>
+    <div class="sk-cell reveal rd1">
+      <div class="sk-icon">🤖</div>
+      <div class="sk-name">AI Agent Building</div>
+      <div class="sk-level">DEPLOYED × 2</div>
+    </div>
+    <div class="sk-cell reveal rd2">
+      <div class="sk-icon">📚</div>
+      <div class="sk-name">ML Fundamentals</div>
+      <div class="sk-level">LEARNING</div>
+    </div>
+    <div class="sk-cell reveal rd3">
+      <div class="sk-icon">🔗</div>
+      <div class="sk-name">LangChain / APIs</div>
+      <div class="sk-level">BUILDING</div>
+    </div>
+    <div class="sk-cell reveal">
+      <div class="sk-icon">🔍</div>
+      <div class="sk-name">RAG Systems</div>
+      <div class="sk-level">EXPLORING</div>
+    </div>
+    <div class="sk-cell reveal rd1">
+      <div class="sk-icon">⚡</div>
+      <div class="sk-name">Automation Flows</div>
+      <div class="sk-level">ACTIVE</div>
+    </div>
+    <div class="sk-cell reveal rd2">
+      <div class="sk-icon">🐍</div>
+      <div class="sk-name">Python for AI</div>
+      <div class="sk-level">GROWING</div>
+    </div>
+    <div class="sk-cell reveal rd3">
+      <div class="sk-icon">🛠️</div>
+      <div class="sk-name">Tool Integration</div>
+      <div class="sk-level">EXPERT LEVEL</div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section id="agents">
+  <div class="sec-header">
+    <div class="sec-cmd reveal">docker ps --agents --status=running</div>
+    <h2 class="sec-title reveal rd1">Deployed <span>Agents.</span></h2>
+  </div>
+  <div class="agents-grid">
+    <!-- AGENT 1 -->
+    <div class="agent-card reveal">
+      <div class="ac-top">
+        <div>
+          <div class="ac-id">AGENT_001 // BLUE</div>
+          <div class="ac-name">AutoTask<br>Agent</div>
+        </div>
+        <div class="ac-status-badge">LIVE</div>
+      </div>
+      <div class="ac-mid">
+        <div class="ac-desc">An autonomous task automation agent that takes a goal, breaks it into steps, and executes them without hand-holding. Built with prompt chaining, memory, and decision loops — designed to actually get things done.</div>
+      </div>
+      <div class="ac-output">
+        <div class="ao-label">AGENT OUTPUT SAMPLE</div>
+        <div class="ao-text">→ Analyzing task... breaking into 4 sub-tasks...<br>→ Step 1 complete. Moving to step 2 autonomously.<br>→ Task completed. Result ready.</div>
+      </div>
+      <div class="ac-footer">
+        <div class="ac-tech">Prompt Chaining</div>
+        <div class="ac-tech">Memory Module</div>
+        <div class="ac-tech">Python</div>
+        <div class="ac-tech">OpenAI API</div>
+      </div>
+    </div>
+    <!-- AGENT 2 -->
+    <div class="agent-card reveal rd1">
+      <div class="ac-top">
+        <div>
+          <div class="ac-id">AGENT_002 // GREEN</div>
+          <div class="ac-name">Research<br>Agent</div>
+        </div>
+        <div class="ac-status-badge">LIVE</div>
+      </div>
+      <div class="ac-mid">
+        <div class="ac-desc">An AI research assistant agent that searches, reads, and synthesizes information from multiple sources into clean, structured summaries. Give it a topic — get back everything you need to know, organized.</div>
+      </div>
+      <div class="ac-output">
+        <div class="ao-label">AGENT OUTPUT SAMPLE</div>
+        <div class="ao-text">→ Query received: "AI trends 2025"<br>→ Crawling 8 sources... synthesizing...<br>→ Summary ready. Key insights extracted.</div>
+      </div>
+      <div class="ac-footer">
+        <div class="ac-tech">Web Search</div>
+        <div class="ac-tech">RAG</div>
+        <div class="ac-tech">LangChain</div>
+        <div class="ac-tech">Summarization</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools">
+  <div class="sec-header">
+    <div class="sec-cmd reveal">find ~/tools --explored --count</div>
+    <h2 class="sec-title reveal rd1">Tools <span>Explored.</span></h2>
+  </div>
+  <div class="tools-grid">
+    <div class="tool-card reveal"><div class="tc-emoji">🔮</div><div class="tc-name">ChatGPT</div><div class="tc-cat">LLM</div></div>
+    <div class="tool-card reveal rd1"><div class="tc-emoji">🧬</div><div class="tc-name">Claude</div><div class="tc-cat">LLM</div></div>
+    <div class="tool-card reveal rd2"><div class="tc-emoji">⚡</div><div class="tc-name">Gemini</div><div class="tc-cat">LLM</div></div>
+    <div class="tool-card reveal rd3"><div class="tc-emoji">🌐</div><div class="tc-name">Perplexity</div><div class="tc-cat">AI Search</div></div>
+    <div class="tool-card reveal"><div class="tc-emoji">🔗</div><div class="tc-name">LangChain</div><div class="tc-cat">Framework</div></div>
+    <div class="tool-card reveal rd1"><div class="tc-emoji">🎨</div><div class="tc-name">Midjourney</div><div class="tc-cat">Image AI</div></div>
+    <div class="tool-card reveal rd2"><div class="tc-emoji">🖼️</div><div class="tc-name">DALL·E</div><div class="tc-cat">Image AI</div></div>
+    <div class="tool-card reveal rd3"><div class="tc-emoji">🎙️</div><div class="tc-name">ElevenLabs</div><div class="tc-cat">Voice AI</div></div>
+    <div class="tool-card reveal"><div class="tc-emoji">🤗</div><div class="tc-name">HuggingFace</div><div class="tc-cat">ML Hub</div></div>
+    <div class="tool-card reveal rd1"><div class="tc-emoji">🛸</div><div class="tc-name">Make / N8N</div><div class="tc-cat">Automation</div></div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey">
+  <div class="sec-header">
+    <div class="sec-cmd reveal">git log --ai-journey --oneline</div>
+    <h2 class="sec-title reveal rd1">Learning <span>Journey.</span></h2>
+  </div>
+  <div class="tl">
+    <div class="tl-item reveal">
+      <div class="tl-dot"></div>
+      <div class="tl-body">
+        <div class="tl-phase">PHASE 01 — DISCOVERY</div>
+        <div class="tl-title">Started with Prompt Engineering</div>
+        <div class="tl-desc">Discovered that how you talk to AI models changes everything. Went deep into prompt patterns, chain-of-thought, few-shot prompting, and system instruction design. Realized prompting is an actual skill, not just typing questions.</div>
+      </div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-dot"></div>
+      <div class="tl-body">
+        <div class="tl-phase">PHASE 02 — DEPTH</div>
+        <div class="tl-title">Explored AI & Machine Learning</div>
+        <div class="tl-desc">Moved beyond using AI tools to understanding how they work. Studied ML fundamentals, neural networks, model architectures, and training pipelines. Built the technical foundation to work with AI at a deeper level.</div>
+      </div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-dot"></div>
+      <div class="tl-body">
+        <div class="tl-phase">PHASE 03 — BUILDING</div>
+        <div class="tl-title">Built & Deployed 2 AI Agents</div>
+        <div class="tl-desc">Took everything learned and shipped real things — two autonomous AI agents that actually run and do tasks. AutoTask Agent and Research Agent are live, and this is just the beginning of what I'll build.</div>
+      </div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-dot"></div>
+      <div class="tl-body">
+        <div class="tl-phase">PHASE 04 — NOW</div>
+        <div class="tl-title">Constantly Exploring New AI Tools</div>
+        <div class="tl-desc">The AI landscape changes every week. New models, new capabilities, new frameworks. I stay on the frontier — testing, learning, integrating. Curiosity is the core operating system.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-left">BK.AI</div>
+  <div class="ft-center">AI Engineer · Agent Builder · Tool Explorer</div>
+  <div class="ft-right">
+    <a href="#hero" class="ft-cta">↑ RETURN TO TOP</a>
+  </div>
+</footer>
+
+<script>
+// Boot sequence
+setTimeout(()=>{
+  const boot=document.getElementById('boot');
+  boot.style.opacity='0';
+  setTimeout(()=>boot.style.display='none',500);
+},2800);
+
+// Cursor
+const cur=document.getElementById('cur'),curC=document.getElementById('curC');
+let mx=0,my=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+  curC.style.left=mx+'px';curC.style.top=my+'px';
+});
+
+// Neural network canvas
+const cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d');
+cvs.width=window.innerWidth;cvs.height=window.innerHeight;
+window.addEventListener('resize',()=>{cvs.width=window.innerWidth;cvs.height=window.innerHeight;});
+
+const nodes=Array.from({length:60},()=>({
+  x:Math.random()*cvs.width,
+  y:Math.random()*cvs.height,
+  vx:(Math.random()-0.5)*0.3,
+  vy:(Math.random()-0.5)*0.3,
+  r:Math.random()*2+1,
+  pulse:Math.random()*Math.PI*2
+}));
+
+function drawNet(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  nodes.forEach(n=>{
+    n.x+=n.vx;n.y+=n.vy;n.pulse+=0.02;
+    if(n.x<0||n.x>cvs.width)n.vx*=-1;
+    if(n.y<0||n.y>cvs.height)n.vy*=-1;
+    const glow=0.4+Math.sin(n.pulse)*0.2;
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,170,255,${glow})`;ctx.fill();
+    nodes.forEach(m=>{
+      const d=Math.hypot(n.x-m.x,n.y-m.y);
+      if(d<120){
+        const a=(1-d/120)*0.15;
+        ctx.beginPath();ctx.moveTo(n.x,n.y);ctx.lineTo(m.x,m.y);
+        ctx.strokeStyle=`rgba(0,170,255,${a})`;
+        ctx.lineWidth=0.5;ctx.stroke();
+      }
+    });
+  });
+  requestAnimationFrame(drawNet);
+}
+drawNet();
+
+// Reveal
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');});},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
